@@ -1,48 +1,53 @@
+import { chromium } from 'playwright';
 
-import {chromium} from 'playwright';
+const url = 'https://partners.amazonaws.com/search/partners/';
 
+(async () => {
+    const browser = await chromium.launch({ headless: false });
+    const page = await browser.newPage();
 
-const url='https://partners.amazonaws.com/search/partners/';
+    try {
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        console.log('Page loaded successfully');
 
-(async ()=>{
-    const browser=await chromium.launch({headless:false})
-    const page =await browser.newPage();
-   
+        await page.waitForSelector('#awsui-autosuggest-0');
+        console.log("Found the search bar");
+        
+        const companyName = 'Meyi Cloud';
+        await page.fill('.global-search > div > awsui-autosuggest > div > div > div > input', companyName);
 
+        const searchButton = 'awsui-button.partner-search__perform-search > button';
+         if (searchButton) {
+         console.log('Search button found');
+          } else {
+          console.log('Search button not found'); 
+          }
 
-    try{
-        await page.goto(url,{waitUntil:'domcontentloaded',timeout:60000})
-        console.log('pageloeaded successfully')
+        await page.click(searchButton);
+        console.log('Search triggered by clicking the search button');
 
-        await page.waitForSelector('#awsui-autosuggest-0')
-        console.log("find the searchbar")
+        await page.waitForSelector('.psf-partner-search-details-card__card', { timeout: 20000 });
+        console.log('Search results loaded');
 
-        const companyName='Meyi Cloud'
-        await page.fill('#awsui-autosuggest-0',companyName);
-        await page.press('#awsui-autosuggest-0', 'Enter');
-        console.log('Search triggered');
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        console.log('Page refreshed successfully');
+        
+        
+        const linkSelector = '.psf-partner-search-details-card__card.card .card-body span a';
+        await page.waitForSelector(linkSelector, { timeout: 10000 });
+        const linkElement = await page.$(linkSelector);
 
-        const linkHandle = await page.$(
-            '.psf-partner-search-details-card__card.card .card-title.h5 .psf-partner-search-details-card__title span a'
-        );
-
-        // if (linkHandle) {
-        //     const linkHref = await linkHandle.getAttribute('href');
-        //     console.log('Found link:', linkHref);
-
-        //     // Click the link
-        //     await linkHandle.click();
-        //     console.log('Clicked the link');
-
-        //     // Wait for the new page to load (if applicable)
-        //     await page.waitForNavigation({ waitUntil: 'domcontentloaded' });
-        //     console.log('Navigated to the linked page');
-        // } else {
-        //     console.log('No link found in the specified structure');
-        // }
-
-
-    }catch(error){
-        console.log(error)
-    }
+        if (linkElement) {
+            const href = await linkElement.getAttribute('href');
+            console.log(`Found the link: ${href}`);
+            await linkElement.click();
+            console.log('Clicked the link');
+        } else {
+            console.log('No matching link found in the search results');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+     } //finally {
+    //     await browser.close();
+    // }
 })();
